@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Load Balancer Status</title>
+    <style>
+        :root {
+            --bg-color: #f4f6f9;
+            --card-bg: #ffffff;
+            --text-color: #333333;
+            --primary: #007bff;
+            --success: #28a745;
+            --border-color: #e2e8f0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            margin-bottom: 10px;
+            color: #1a202c;
+        }
+
+        .subtitle {
+            color: #718096;
+            margin-bottom: 40px;
+            font-size: 1.1rem;
+        }
+
+        /* Responsive Grid */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            width: 100%;
+            max-width: 1000px;
+        }
+
+        /* Server Box Styles */
+        .server-card {
+            background: var(--card-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Active State Colors */
+        .server-card.active-web-01 {
+            border-color: #3182ce;
+            background-color: #ebf8ff;
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgba(49, 130, 206, 0.2);
+        }
+
+        .server-card.active-web-02 {
+            border-color: #38a169;
+            background-color: #f0fff4;
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgba(56, 161, 105, 0.2);
+        }
+
+        /* Status Indicators */
+        .status-badge {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            background: #edf2f7;
+            color: #4a5568;
+        }
+
+        .server-card.active-web-01 .status-badge {
+            background: #3182ce;
+            color: white;
+        }
+
+        .server-card.active-web-02 .status-badge {
+            background: #38a169;
+            color: white;
+        }
+
+        .server-label {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #a0aec0;
+            margin-bottom: 4px;
+        }
+
+        .server-value {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+            word-break: break-all;
+        }
+
+        .divider {
+            height: 1px;
+            background: var(--border-color);
+            margin: 12px 0;
+        }
+
+        .btn-refresh {
+            margin-top: 40px;
+            padding: 12px 24px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+
+        .btn-refresh:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Load Balancer Dashboard</h1>
+    <div class="subtitle">Refresh to see Nginx distribute traffic between backends</div>
+
+    <div class="grid">
+        <!-- Server 1 Card -->
+        <div id="card-web-01" class="server-card">
+            <span class="status-badge" id="badge-web-01">INACTIVE</span>
+            
+            <div class="server-label">Host Name</div>
+            <div class="server-value">web-server-01</div>
+            
+            <div class="divider"></div>
+            
+            <div class="server-label">Public IP / Upstream</div>
+            <div class="server-value" id="ip-web-01">192.168.1.10</div>
+        </div>
+
+        <!-- Server 2 Card -->
+        <div id="card-web-02" class="server-card">
+            <span class="status-badge" id="badge-web-02">INACTIVE</span>
+            
+            <div class="server-label">Host Name</div>
+            <div class="server-value">web-server-02</div>
+            
+            <div class="divider"></div>
+            
+            <div class="server-label">Public IP / Upstream</div>
+            <div class="server-value" id="ip-web-02">192.168.1.20</div>
+        </div>
+    </div>
+
+    <button class="btn-refresh" onclick="simulateTraffic()">Send Request</button>
+
+    <script>
+        // Placeholder simulation logic for testing inside the browser.
+        // Nginx will dynamically provide these values when deployed.
+        function simulateTraffic() {
+            // Reset both cards
+            document.getElementById('card-web-01').className = 'server-card';
+            document.getElementById('card-web-02').className = 'server-card';
+            document.getElementById('badge-web-01').innerText = 'INACTIVE';
+            document.getElementById('badge-web-02').innerText = 'INACTIVE';
+
+            // Randomly pick a server to simulate Round-Robin load balancing
+            const activeServer = Math.random() > 0.5 ? 'web-01' : 'web-02';
+            
+            // Apply active styles
+            const card = document.getElementById(`card-${activeServer}`);
+            card.classList.add(`active-${activeServer}`);
+            document.getElementById(`badge-${activeServer}`).innerText = 'ACTIVE REQUEST';
+        }
+
+        // Trigger an initial request state on load
+        simulateTraffic();
+    </script>
+</body>
+</html>
