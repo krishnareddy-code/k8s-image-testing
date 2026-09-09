@@ -3,79 +3,269 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Active Backend Target</title>
+    <title>ChromaGuess - The Color Game</title>
     <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #6366f1;
+        }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-            background-color: #f4f6f9;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
             margin: 0;
-            padding: 40px 20px;
+            padding: 20px;
             display: flex;
             flex-direction: column;
             align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
         }
 
-        h1 { color: #1a202c; margin-bottom: 5px; }
-        .subtitle { color: #718096; margin-bottom: 30px; }
+        header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
 
-        /* The single real-time server box */
-        .server-box {
-            background: #ffffff;
-            border: 2px solid #4a5568;
+        h1 {
+            font-size: 2.5rem;
+            margin: 0 0 10px 0;
+            background: linear-gradient(to right, #6366f1, #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .score-container {
+            display: flex;
+            gap: 20px;
+            font-size: 1.1rem;
+            background: var(--card-bg);
+            padding: 10px 20px;
+            border-radius: 30px;
+            border: 1px solid #334155;
+            margin-bottom: 20px;
+        }
+
+        .score-box span {
+            font-weight: bold;
+            color: #38bdf8;
+        }
+
+        /* The target color display box */
+        #rgb-target-box {
+            background: var(--card-bg);
+            border: 2px solid #334155;
+            border-radius: 16px;
+            padding: 20px 40px;
+            font-size: 1.8rem;
+            font-weight: bold;
+            letter-spacing: 1px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+            text-align: center;
+        }
+
+        #message {
+            height: 24px;
+            font-size: 1.2rem;
+            font-weight: 500;
+            margin-bottom: 20px;
+            transition: color 0.2s;
+        }
+
+        /* Game Grid */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            width: 100%;
+            max-width: 600px;
+            margin-bottom: 35px;
+        }
+
+        @media (max-width: 500px) {
+            .grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        /* Color Tiles */
+        .tile {
+            aspect-ratio: 1 / 1;
             border-radius: 12px;
-            padding: 24px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-            width: 320px;
-            position: relative;
+            cursor: pointer;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+            transition: transform 0.2s, opacity 0.2s, box-shadow 0.2s;
+            border: 3px solid transparent;
         }
 
-        /* Dynamic Color Coding based on which host is injected */
-        body:has(.host-web-01) .server-box {
-            border-color: #3182ce;
-            background-color: #ebf8ff; /* Light Blue for Server 1 */
-        }
-        body:has(.host-web-02) .server-box {
-            border-color: #38a169;
-            background-color: #f0fff4; /* Light Green for Server 2 */
+        .tile:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
         }
 
-        .label {
-            font-size: 0.85rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: #718096;
-            margin-bottom: 4px;
+        .tile.fade {
+            opacity: 0;
+            transform: scale(0.9);
+            cursor: default;
+            pointer-events: none;
         }
 
-        .value {
-            font-size: 1.3rem;
+        /* Action Buttons */
+        .btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1rem;
             font-weight: 600;
-            margin-bottom: 16px;
-            color: #1a202c;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
         }
 
-        .divider {
-            height: 1px;
-            background: #e2e8f0;
-            margin: 12px 0;
+        .btn:hover {
+            background: #4f46e5;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
         }
     </style>
 </head>
 <body>
 
-    <h1>Live Backend Route</h1>
-    <p class="subtitle">Real-time upstream metrics from the load balancer</p>
+    <header>
+        <h1>ChromaGuess</h1>
+        <div class="score-container">
+            <div class="score-box">Score: <span id="score-val">0</span></div>
+            <div class="score-box">Streak: <span id="streak-val">0</span></div>
+        </div>
+    </header>
 
-    <div class="server-box">
-        <div class="label">Served By Backend</div>
-        <!-- Nginx will dynamically swap these out text blocks -->
-        <div class="value host-TARGET_HOST">TARGET_HOST</div>
-        
-        <div class="divider"></div>
-        
-        <div class="label">Upstream IP & Port</div>
-        <div class="value">TARGET_IP</div>
+    <div id="message">Match the RGB code below!</div>
+
+    <!-- The target RGB text showing what to find -->
+    <div id="rgb-target-box">RGB(0, 0, 0)</div>
+
+    <!-- The choice boxes -->
+    <div class="grid" id="tile-container">
+        <div class="tile"></div>
+        <div class="tile"></div>
+        <div class="tile"></div>
+        <div class="tile"></div>
+        <div class="tile"></div>
+        <div class="tile"></div>
     </div>
 
+    <button class="btn" id="reset-btn">New Colors</button>
+
+    <script>
+        let score = 0;
+        let streak = 0;
+        let pickedColor;
+        let colors = [];
+        let gameActive = true;
+
+        const tiles = document.querySelectorAll('.tile');
+        const colorDisplay = document.getElementById('rgb-target-box');
+        const messageDisplay = document.getElementById('message');
+        const scoreDisplay = document.getElementById('score-val');
+        const streakDisplay = document.getElementById('streak-val');
+        const resetBtn = document.getElementById('reset-btn');
+
+        // Initialize Game
+        init();
+
+        function init() {
+            setupTiles();
+            resetGame();
+            resetBtn.addEventListener('click', () => {
+                streak = 0;
+                streakDisplay.textContent = streak;
+                resetGame();
+            });
+        }
+
+        function setupTiles() {
+            tiles.forEach((tile, index) => {
+                tile.addEventListener('click', function() {
+                    if (!gameActive) return;
+
+                    let clickedColor = this.style.backgroundColor;
+                    
+                    // Format both to remove spaces for strict matching
+                    if (normalizeRgb(clickedColor) === normalizeRgb(pickedColor)) {
+                        messageDisplay.textContent = "Correct! 🎉";
+                        messageDisplay.style.color = "#4ade80";
+                        changeColors(pickedColor);
+                        score += 10;
+                        streak += 1;
+                        scoreDisplay.textContent = score;
+                        streakDisplay.textContent = streak;
+                        resetBtn.textContent = "Play Again";
+                        gameActive = false;
+                    } else {
+                        this.classList.add('fade');
+                        messageDisplay.textContent = "Try Again! ❌";
+                        messageDisplay.style.color = "#f87171";
+                        streak = 0;
+                        streakDisplay.textContent = streak;
+                    }
+                });
+            });
+        }
+
+        function resetGame() {
+            gameActive = true;
+            colors = generateRandomColors(6);
+            pickedColor = pickTargetColor();
+            colorDisplay.textContent = pickedColor.toUpperCase();
+            messageDisplay.textContent = "Match the RGB code below!";
+            messageDisplay.style.color = "var(--text-muted)";
+            resetBtn.textContent = "New Colors";
+
+            tiles.forEach((tile, i) => {
+                tile.classList.remove('fade');
+                tile.style.backgroundColor = colors[i];
+            });
+        }
+
+        function changeColors(color) {
+            tiles.forEach(tile => {
+                tile.classList.remove('fade');
+                tile.style.backgroundColor = color;
+            });
+        }
+
+        function pickTargetColor() {
+            const random = Math.floor(Math.random() * colors.length);
+            return colors[random];
+        }
+
+        function generateRandomColors(num) {
+            const arr = [];
+            for (let i = 0; i < num; i++) {
+                arr.push(randomColor());
+            }
+            return arr;
+        }
+
+        function randomColor() {
+            const r = Math.floor(Math.random() * 256);
+            const g = Math.floor(Math.random() * 256);
+            const b = Math.floor(Math.random() * 256);
+            return `rgb(${r}, ${g}, ${b})`;
+        }
+
+        // Helper to remove any odd spacing browser injects into RGB strings
+        function normalizeRgb(rgbString) {
+            return rgbString.replace(/\s+/g, '').toLowerCase();
+        }
+    </script>
 </body>
 </html>
